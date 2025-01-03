@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management System</title>
+</head>
+<body>
+    <h1>Library Management System</h1>
+
+    <!-- Dropdown to select books -->
+    <div>
+        <h2>Select a Book</h2>
+        <select id="bookDropdown">
+            <option value="">Select a book...</option>
+        </select>
+    </div>
+
+    <!-- Search Books Section -->
+    <div>
+        <h2>Search Books</h2>
+        <form id="searchForm">
+            <label for="title">Title:</label>
+            <input type="text" id="title" name="title">
+            <label for="author">Author:</label>
+            <input type="text" id="author" name="author">
+            <button type="submit">Search</button>
+        </form>
+    </div>
+
+    <div id="searchResults"></div>
+
+    <!-- Add Book Section -->
+    <div>
+        <h2>Add New Book</h2>
+        <form id="addBookForm">
+            <label for="bookTitle">Book Title (required):</label>
+            <input type="text" id="bookTitle" name="bookTitle" required>
+            <label for="author">Author (required):</label>
+            <input type="text" id="authorName" name="author" required>
+            <label for="year">Year:</label>
+            <input type="number" id="year" name="year">
+            <button type="submit">Add Book</button>
+        </form>
+    </div>
+
+    <div id="addBookResult"></div>
+
+    <script>
+
+        async function populateBookDropdown() {
+            const response = await fetch('/books');
+            const books = await response.json();
+            const dropdown = document.getElementById('bookDropdown');
+            books.forEach(book => {
+                const option = document.createElement('option');
+                option.value = book.id;
+                option.textContent = `${book.title} by ${book.author}`;
+                dropdown.appendChild(option);
+            });
+        }
+
+
+        // Search Books
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('title').value;
+            const author = document.getElementById('author').value;
+
+            const response = await fetch(`/books?title=${encodeURIComponent(title)}&author=${encodeURIComponent(author)}`);
+            const books = await response.json();
+            const resultsDiv = document.getElementById('searchResults');
+            resultsDiv.innerHTML = books.map(book => `<p>${book.title} by ${book.author}</p>`).join('');
+        });
+
+        // Add Book
+        document.getElementById('addBookForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const bookTitle = document.getElementById('bookTitle').value;
+            const authorName = document.getElementById('authorName').value;
+            const year = document.getElementById('year').value;
+
+            if (!bookTitle || !authorName) {
+                alert('Book Title and Author are required!');
+                return;
+            }
+
+            const bookData = {
+                title: bookTitle,
+                author: authorName,
+                year: year || null
+            };
+
+            const response = await fetch('/books/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(bookData)
+            });
+
+            const result = await response.json();
+            const resultDiv = document.getElementById('addBookResult');
+            if (response.ok) {
+                resultDiv.innerHTML = `<p>Book added successfully: ${result.title} by ${result.author}</p>`;
+            } else {
+                resultDiv.innerHTML = `<p>Error adding book: ${result.message || 'Unknown error'}</p>`;
+            }
+        });
+                populateBookDropdown();
+
+    </script>
+</body>
+</html>
